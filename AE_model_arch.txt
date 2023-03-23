@@ -1,0 +1,67 @@
+Conv 
+# Padding==Same: -> padding = 1, stride = 1과 같음 (커널사이즈 3x3)
+[(H1−HF+2*padding)/stride]+1
+
+MaxPool
+# Padding==Same: -> padding = 0, stride = 2과 같음 (커널사이즈 2x2)
+[(H1−HF+2*padding)/stride]+1
+
+HF = 필터 높이 
+
+입력이미지 크기 512 X 512 X 3
+
+인코더 
+1. H1 = 512, HF = 3, padding = "same"
+
+Conv2d(3, 32, kernel_size = (3,3), padding = "same") -> (512-3 + 2*1 / 1) + 1
+512 X 512 X 3 -> 512 X 512 X 32
+
+MaxPoold2d(2,2), padding = 0 -> (512-2 + 2* 0 / 2) + 1
+512 X 512 X 32 -> 256 X 256 X 32
+
+2.
+Conv2d(32, 64, kernel_size = (3,3), padding = "same") -> (256-3 + 2*1 / 1) + 1
+256 X 256 X 32 -> 256 X 256 X 64
+
+MaxPoold2d(2,2), padding = 0 -> (256-2 + 2* 0 / 2) + 1
+256 X 256 X 64 -> 128 X 128 X 64
+
+3.
+Conv2d(64, 128, kernel_size = (3,3), padding = "same") -> (128-3 + 2*1 / 1) + 1
+128 X 128 X 64 -> 128 X 128 X 128
+
+MaxPoold2d(2,2), padding = 0 -> (127-2 + 2* 0 / 2) + 1
+128 X 128 X 128 -> 64 X 64 X 128
+
+4.
+Conv2d(128, 256, kernel_size = (3,3), padding = "same") -> (64-3 + 2*1 / 1) + 1
+64 X 64 X 128 -> 64 X 64 X 256
+
+MaxPoold2d(2,2), padding = 0 -> (64-2 + 2* 0 / 2) + 1
+64 X 64 X 256 -> 32 X 32 X 256
+
+ConvTransPose2d
+# Padding==Same: -> padding = 1, stride = 1과 같음
+H = H1 * stride
+
+# Padding==Valid
+H = (H1-1) * stride + HF
+H = (H1 - 1)*stride + HF - 2*padding
+
+디코더
+1. 
+H1 = 64, Stride = 2, HF = 2
+ConvTranspose2d(128, 128, kernel_size = (3,3), stride = 2, padding = 0) -> (64 -1)*2 + 3 - 2*0
+64 X 64 X 128 -> 129 X 129 X 128 
+2. 
+H1 = 129, Stride = 2, HF = 2
+ConvTranspose2d(128, 64, kernel_size = (3,3), stride = 2, padding = 0) -> (129 -1)*2 + 3 - 2*0
+129 X 129 X 128 -> 259 X 259 X 64
+3. 
+H1 = 259, Stride = 2, HF = 2
+ConvTranspose2d(64, 32, kernel_size = (3,3), stride = 2, padding = 0) -> (259 -1)*2 + 3 - 2*0
+259 X 259 X 64 -> 519 X 519 X 32
+4. 
+H1 = 519, Stride = 1, HF = 3, padding =1
+ConvTranspose2d(32, 3, kernel_size = (3,3), stride = 1, padding = 2) -> (519 -1)*1 + 3 - 2*2
+519 X 519 X 32 -> 517 X 517 X 3
